@@ -106,7 +106,7 @@ print(pt.rstrip())  # secret (+ pad spaces для ECB)
 
 ## GOST 28147-89
 
-Порт `gost28147` из `alx/CRYPTLIB.h` / `.cpp` репозитория AUTOCAD.
+Криптографический алгоритм шифрования по ГОСТ 28147-89
 
 ### Режимы
 
@@ -117,7 +117,7 @@ print(pt.rstrip())  # secret (+ pad spaces для ECB)
 | `OFB` | 2 | потоковый; encrypt ≡ decrypt |
 | `CTR` | 3 | потоковый со счётчиком; encrypt ≡ decrypt |
 
-### Ключи (как в `CRY.cpp`)
+### Ключи
 
 | level | Ключ | Режим в `encrypt_hex` |
 |-------|------|------------------------|
@@ -125,8 +125,7 @@ print(pt.rstrip())  # secret (+ pad spaces для ECB)
 | 1 | `KEY2` | CBC |
 | 2 | `KEY3` | OFB |
 
-S-боксы — **кастомные** (не CryptoPro / не «стандартный» GOST). Совместимость
-с AUTOCAD важнее «стандартности» таблиц.
+S-боксы — **кастомные** (не CryptoPro / не «стандартный» GOST).
 
 ### API
 
