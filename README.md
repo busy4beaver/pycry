@@ -1,6 +1,6 @@
 # **pycry**
 
-Криптографические алгоритмы
+Криптографические примитивы на чистом Python.
 
 [![Tag](https://img.shields.io/github/v/tag/busy4beaver/pycry?color=00c2e8)](https://github.com/busy4beaver/pycry)
 [![Supported Python versions](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=FFE873)](https://www.python.org/downloads/)
@@ -24,9 +24,11 @@
 
 | Область | Что даёт |
 |---------|----------|
-| **GOST 28147-89** | ECB / CBC / OFB / CTR, S-боксы |
+| **GOST 28147-89** | ECB / CBC / OFB / CTR |
+| **S-боксы** | предопределённые наборы (CryptoPro A–D, Test) или свои 8×16 |
+| **Ключ** | 8×uint32 или 32 байта — передаётся снаружи |
 | **Чистый Python** | без нативных расширений и внешних crypto-зависимостей |
-| **Hex API** | `encrypt_hex` / `decrypt_hex` — как `CRY::encrypt` / `decrypt` |
+| **Hex API** | `encrypt_hex` / `decrypt_hex` |
 | **Расширяемость** | `algorithms/` — сюда добавляются новые шифры |
 
 ---
@@ -40,7 +42,7 @@ src/pycry/
 ├── py.typed
 └── algorithms/
     ├── __init__.py
-    └── gost28147.py         # GOST 28147-89 (Magma-style)
+    └── gost28147.py         # GOST 28147-89
 
 tests/
 └── test_gost28147.py
@@ -57,9 +59,10 @@ tests/
 from pycry import (
     Gost28147,
     CRYPT_MODE,
-    KEY1, KEY2, KEY3,
+    SBOXES, SBOX_CRYPTOPRO_A, SBOX_TEST,
     encrypt_hex, decrypt_hex,
     encrypt_bytes, decrypt_bytes,
+    resolve_sbox, normalize_key,
 )
 ```
 
@@ -88,70 +91,99 @@ pip install -e .
 ## Быстрый старт
 
 ```python
-from pycry import Gost28147, CRYPT_MODE, KEY1, encrypt_hex, decrypt_hex
+from pycry import Gost28147, CRYPT_MODE
 
-# Блочный шифр (in-place)
-data = bytearray(b"hello world!!!!")
-g = Gost28147()
-g.crypt(data, KEY1, encrypt=True, mode=CRYPT_MODE.ECB)
-g.crypt(data, KEY1, encrypt=False, mode=CRYPT_MODE.ECB)
+key = [
+    0x01020304, 0x05060708, 0x090A0B0C, 0x0D0E0F10,
+    0x11121314, 0x15161718, 0x191A1B1C, 0x1D1E1F20,
+]
 
-# Высокоуровневый hex API (level 0 → KEY1 + ECB)
-ct = encrypt_hex("secret", level=0)
-pt = decrypt_hex(ct, level=0)
-print(pt.rstrip())  # secret (+ pad spaces для ECB)
+g = Gost28147(sbox="cryptopro-a")  # default
+data = bytearray(b"12345678")
+g.crypt(data, key, encrypt=True, mode=CRYPT_MODE.ECB)
+g.crypt(data, key, encrypt=False, mode=CRYPT_MODE.ECB)
+
+# Hex API
+from pycry import encrypt_hex, decrypt_hex
+ct = encrypt_hex("12345678", key, mode=CRYPT_MODE.ECB)
+pt = decrypt_hex(ct, key, mode=CRYPT_MODE.ECB)
 ```
 
 ---
 
 ## GOST 28147-89
 
-Криптографический алгоритм шифрования по ГОСТ 28147-89
+Блочный шифр: блок 64 бит, ключ 256 бит. S-боксы — параметр алгоритма
+(в стандарте не зафиксированы).
 
 ### Режимы
 
 | `CRYPT_MODE` | Значение | Примечание |
 |--------------|----------|------------|
-| `ECB` | 0 | pad пробелами до кратности 8 при encrypt |
-| `CBC` | 1 | IV = syncpack (R=`0xE9FC68AD`, L=`0xA54D1B93`) |
+| `ECB` | 0 | при encrypt дополнение нулями до кратности 8 |
+| `CBC` | 1 | нужен `iv` (8 байт; default — нули) |
 | `OFB` | 2 | потоковый; encrypt ≡ decrypt |
 | `CTR` | 3 | потоковый со счётчиком; encrypt ≡ decrypt |
 
-### Ключи
+### S-боксы
 
-| level | Ключ | Режим в `encrypt_hex` |
-|-------|------|------------------------|
-| 0 | `KEY1` | ECB |
-| 1 | `KEY2` | CBC |
-| 2 | `KEY3` | OFB |
+| Имя | Описание |
+|-----|----------|
+| `cryptopro-a` **(default)** | CryptoPro-A (RFC 4357) |
+| `cryptopro-b` / `c` / `d` | CryptoPro B–D |
+| `test` | TestParamSet (RFC 4357) |
+| custom | любая последовательность 8×16 значений 0..15 |
 
-S-боксы — **кастомные** (не CryptoPro / не «стандартный» GOST).
+```python
+from pycry import Gost28147, SBOX_TEST, resolve_sbox
+
+Gost28147()                          # cryptopro-a
+Gost28147(sbox="test")
+Gost28147(sbox=SBOX_TEST)
+Gost28147(sbox=resolve_sbox("cryptopro-b"))
+
+# свой набор
+my_sbox = [
+    list(range(16)),  # 8 строк × 16 значений 0..15
+    # ...
+]
+Gost28147(sbox=my_sbox)
+```
+
+Длинные OID-имена (`id-Gost28147-89-CryptoPro-A-ParamSet` и т.п.) тоже принимаются.
+
+### Ключ
+
+```python
+# 8 × uint32
+key = [0x01234567, 0x89ABCDEF, ...]  # 8 слов
+
+# или 32 байта (little-endian слова)
+key = bytes(range(32))
+```
+
+Ключ **не хранится** в модуле — всегда передаётся в `crypt` / helper-функции.
 
 ### API
 
 ```python
-from pycry import Gost28147, CRYPT_MODE, KEY1, KEY2
+from pycry import Gost28147, CRYPT_MODE
 
-g = Gost28147()
-
-# GetCrypt-совместимый интерфейс
+g = Gost28147(sbox="cryptopro-a")
 msg = bytearray(b"1234567890123456")
-g.crypt(msg, KEY1, encrypt=True, mode=CRYPT_MODE.ECB)
-g.crypt(msg, KEY1, encrypt=False, mode=CRYPT_MODE.ECB)
+g.crypt(msg, key, encrypt=True, mode=CRYPT_MODE.ECB)
+g.crypt(msg, key, encrypt=False, mode=CRYPT_MODE.ECB)
 
-# CBC
-msg = bytearray(b"1234567890123456")
-g.crypt(msg, KEY2, encrypt=True, mode=CRYPT_MODE.CBC)
-g.crypt(msg, KEY2, encrypt=False, mode=CRYPT_MODE.CBC)
+# CBC с IV
+iv = b"\x00" * 8
+g.crypt(msg, key, encrypt=True, mode=CRYPT_MODE.CBC, iv=iv)
 
 # OFB / CTR — повторный crypt с encrypt=True восстанавливает plaintext
-msg = bytearray(b"stream!!")
-g.crypt(msg, KEY1, encrypt=True, mode=CRYPT_MODE.OFB)
-g.crypt(msg, KEY1, encrypt=True, mode=CRYPT_MODE.OFB)
+g.crypt(msg, key, encrypt=True, mode=CRYPT_MODE.OFB, iv=iv)
 ```
 
-Вспомогательные функции: `mod32`, `mod32m1`, `rol`, `ror`,
-`bytes_to_hex`, `hex_to_bytes`.
+Вспомогательные: `mod32`, `rol`, `ror`, `bytes_to_hex`, `hex_to_bytes`,
+`normalize_key`, `resolve_sbox`.
 
 ---
 
@@ -162,7 +194,8 @@ pip install pytest
 pytest tests/ -v
 ```
 
-Покрывают round-trip ECB/CBC, involution OFB/CTR, padding, hex API, пустое сообщение.
+Покрывают round-trip ECB/CBC, involution OFB/CTR, padding, hex API,
+выбор S-боксов по имени и custom, ключ как 32 байта.
 
 ---
 
