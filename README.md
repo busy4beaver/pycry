@@ -1,7 +1,6 @@
 # **pycry**
 
-Криптографические примитивы на чистом Python. Порт алгоритмов из AUTOCAD
-([CRYPTLIB](https://github.com/busy4beaver/AUTOCAD) / CRY) и место для новых реализаций.
+Криптографические примитивы
 
 [![Tag](https://img.shields.io/github/v/tag/busy4beaver/pycry?color=00c2e8)](https://github.com/busy4beaver/pycry)
 [![Supported Python versions](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=FFE873)](https://www.python.org/downloads/)
