@@ -1,10 +1,10 @@
-# **pycry**
+# **rucry**
 
 Криптографические примитивы на чистом Python.
 
-[![Tag](https://img.shields.io/github/v/tag/busy4beaver/pycry?color=00c2e8)](https://github.com/busy4beaver/pycry)
+[![Tag](https://img.shields.io/github/v/tag/busy4beaver/rucry?color=00c2e8)](https://github.com/busy4beaver/rucry)
 [![Supported Python versions](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=FFE873)](https://www.python.org/downloads/)
-[![Licence](https://img.shields.io/github/license/busy4beaver/pycry.svg)](LICENSE)
+[![Licence](https://img.shields.io/github/license/busy4beaver/rucry.svg)](LICENSE)
 
 ---
 
@@ -36,7 +36,7 @@
 ## Структура пакета
 
 ```text
-src/pycry/
+src/rucry/
 ├── __init__.py              # публичный API
 ├── __version__.py
 ├── py.typed
@@ -56,7 +56,7 @@ tests/
 ### Публичный импорт
 
 ```python
-from pycry import (
+from rucry import (
     Gost28147,
     CRYPT_MODE,
     SBOXES, SBOX_CRYPTOPRO_A, SBOX_TEST,
@@ -73,14 +73,14 @@ from pycry import (
 Из GitHub:
 
 ```bash
-pip install git+https://github.com/busy4beaver/pycry.git
+pip install git+https://github.com/busy4beaver/rucry.git
 ```
 
 Локально (editable):
 
 ```bash
-git clone https://github.com/busy4beaver/pycry.git
-cd pycry
+git clone https://github.com/busy4beaver/rucry.git
+cd rucry
 pip install -e .
 ```
 
@@ -91,7 +91,7 @@ pip install -e .
 ## Быстрый старт
 
 ```python
-from pycry import Gost28147, CRYPT_MODE
+from rucry import Gost28147, CRYPT_MODE
 
 key = [
     0x01020304, 0x05060708, 0x090A0B0C, 0x0D0E0F10,
@@ -104,7 +104,7 @@ g.crypt(data, key, encrypt=True, mode=CRYPT_MODE.ECB)
 g.crypt(data, key, encrypt=False, mode=CRYPT_MODE.ECB)
 
 # Hex API
-from pycry import encrypt_hex, decrypt_hex
+from rucry import encrypt_hex, decrypt_hex
 ct = encrypt_hex("12345678", key, mode=CRYPT_MODE.ECB)
 pt = decrypt_hex(ct, key, mode=CRYPT_MODE.ECB)
 ```
@@ -135,7 +135,7 @@ pt = decrypt_hex(ct, key, mode=CRYPT_MODE.ECB)
 | custom | любая последовательность 8×16 значений 0..15 |
 
 ```python
-from pycry import Gost28147, SBOX_TEST, resolve_sbox
+from rucry import Gost28147, SBOX_TEST, resolve_sbox
 
 Gost28147()                          # cryptopro-a
 Gost28147(sbox="test")
@@ -167,7 +167,7 @@ key = bytes(range(32))
 ### API
 
 ```python
-from pycry import Gost28147, CRYPT_MODE
+from rucry import Gost28147, CRYPT_MODE
 
 g = Gost28147(sbox="cryptopro-a")
 msg = bytearray(b"1234567890123456")
