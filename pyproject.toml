@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pycry"
+version = "0.1.0"
+description = "Криптографические примитивы на чистом Python (GOST 28147-89 и др.)"
+readme = "README.md"
+authors = [
+    { name = "Андрей Литвинов", email = "busy4beaver@gmail.com" },
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Typing :: Typed",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["crypto", "gost", "gost28147", "magma", "encryption"]
+
+[project.urls]
+Homepage = "https://github.com/busy4beaver"
+Repository = "https://github.com/busy4beaver/pycry"
+Documentation = "https://github.com/busy4beaver/pycry#readme"
+Funding = "https://yoomoney.ru/to/4100118099549894"
+Donation = "https://boosty.to/busybeaver/donate"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pycry*"]
+
+[tool.setuptools.package-data]
+pycry = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
