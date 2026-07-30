@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pycry import (
+from rucry import (
     CRYPT_MODE,
     SBOX_TEST,
     Gost28147,
