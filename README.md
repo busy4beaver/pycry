@@ -24,7 +24,7 @@
 
 | Область | Что даёт |
 |---------|----------|
-| **GOST 28147-89** | ECB / CBC / OFB / CTR, S-боксы и ключи как в AUTOCAD CRYPTLIB |
+| **GOST 28147-89** | ECB / CBC / OFB / CTR, S-боксы |
 | **Чистый Python** | без нативных расширений и внешних crypto-зависимостей |
 | **Hex API** | `encrypt_hex` / `decrypt_hex` — как `CRY::encrypt` / `decrypt` |
 | **Расширяемость** | `algorithms/` — сюда добавляются новые шифры |
