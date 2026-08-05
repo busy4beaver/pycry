@@ -99,8 +99,8 @@ def test_time() -> None:
 
     ts = time_to_bytes(t0, length=8)
     assert len(ts) == 8
-    back = bytes_to_time(ts, utc=True)
-    assert abs(back.timestamp() - t0.replace(tzinfo=timezone.utc).timestamp() if t0.tzinfo is None else t0.timestamp()) < 2
+    back = bytes_to_time(ts)
+    assert abs(back.timestamp() - t0.replace().timestamp() if t0.tzinfo is None else t0.timestamp()) < 2
 
 
 def test_random() -> None:
