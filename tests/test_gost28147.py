@@ -1,4 +1,4 @@
-"""Unit-тесты GOST 28147-89 (ECB / CBC / OFB / CTR)."""
+"""Unit-тесты GOST 28147-89 (ECB / CBC / OFB / CTR) + новый API."""
 
 from __future__ import annotations
 
@@ -13,6 +13,11 @@ from rucry import (
     encrypt_hex,
     decrypt_hex,
     resolve_sbox,
+    pkcs7_pad,
+    pkcs7_unpad,
+    zero_pad,
+    zero_unpad,
+    random_iv,
 )
 
 KEY = [
@@ -31,6 +36,8 @@ KEY = [
 def gost() -> Gost28147:
     return Gost28147(sbox="cryptopro-a")
 
+
+# ---- старый API (crypt) ---------------------------------------------------
 
 def test_ecb_roundtrip(gost: Gost28147) -> None:
     plain = bytearray(b"1234567890123456")
@@ -136,3 +143,86 @@ def test_key_as_32_bytes() -> None:
     g.crypt(plain, key_bytes, encrypt=True, mode=CRYPT_MODE.ECB)
     g.crypt(plain, key_bytes, encrypt=False, mode=CRYPT_MODE.ECB)
     assert bytes(plain) == original
+
+
+# ---- новый API (encrypt / decrypt) ----------------------------------------
+
+def test_new_api_ecb_roundtrip() -> None:
+    g = Gost28147(key=KEY, sbox="cryptopro-a", mode=CRYPT_MODE.ECB)
+    plain = b"12345678ABCDEFGH"
+    ct = g.encrypt(plain)
+    assert ct != plain
+    pt = g.decrypt(ct)
+    assert pt == plain
+
+
+def test_new_api_cbc_with_iv() -> None:
+    iv = b"\x01\x02\x03\x04\x05\x06\x07\x08"
+    g = Gost28147(key=KEY, mode=CRYPT_MODE.CBC, iv=iv)
+    plain = b"hello world!!!!!"  # 16 bytes
+    ct = g.encrypt(plain)
+    pt = g.decrypt(ct)
+    assert pt == plain
+
+
+def test_new_api_pkcs7_padding() -> None:
+    g = Gost28147(key=KEY, mode=CRYPT_MODE.ECB, padding="pkcs7")
+    plain = b"hello"  # 5 bytes → pad to 8
+    ct = g.encrypt(plain)
+    assert len(ct) == 8
+    pt = g.decrypt(ct)
+    assert pt == plain
+
+
+def test_new_api_ansi_padding() -> None:
+    g = Gost28147(key=KEY, mode=CRYPT_MODE.ECB, padding="ansi")
+    plain = b"hello"
+    ct = g.encrypt(plain)
+    assert len(ct) == 8
+    pt = g.decrypt(ct)
+    assert pt == plain
+
+
+def test_new_api_ofb() -> None:
+    iv = random_iv(8)
+    g = Gost28147(key=KEY, mode=CRYPT_MODE.OFB, iv=iv, padding="none")
+    plain = b"stream data of any length!!!"
+    ct = g.encrypt(plain)
+    pt = g.decrypt(ct)
+    assert pt == plain
+
+
+def test_new_api_override_params() -> None:
+    g = Gost28147(key=KEY, mode=CRYPT_MODE.ECB)
+    iv = b"\xaa" * 8
+    plain = b"12345678"
+    ct = g.encrypt(plain, mode=CRYPT_MODE.CBC, iv=iv)
+    pt = g.decrypt(ct, mode=CRYPT_MODE.CBC, iv=iv)
+    assert pt == plain
+
+
+def test_iv_property() -> None:
+    g = Gost28147(key=KEY)
+    assert g.iv == b"\x00" * 8
+    g.iv = b"\xff" * 8
+    assert g.iv == b"\xff" * 8
+    with pytest.raises(ValueError):
+        g.iv = b"short"
+
+
+def test_padding_helpers() -> None:
+    data = b"abc"
+    z = zero_pad(data, 8)
+    assert len(z) == 8
+    assert zero_unpad(z) == b"abc"
+
+    p = pkcs7_pad(data, 8)
+    assert len(p) == 8
+    assert p[-1] == 5
+    assert pkcs7_unpad(p, 8) == b"abc"
+
+    # full block
+    full = b"12345678"
+    p2 = pkcs7_pad(full, 8)
+    assert len(p2) == 16
+    assert pkcs7_unpad(p2, 8) == full
